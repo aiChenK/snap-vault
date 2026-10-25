@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  server-test:
+    name: Server (Node.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  client-test:
+    name: Client (Go)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: client/go.mod
+      - run: go build ./...
+      - run: go vet ./...
+      # 含 ./test/ 端到端测试 (自行编译客户端并拉起 Node 服务端, runner 预装 node)
+      # 服务端依赖 express/multer 等, 不安装则服务端进程启动即失败
+      - run: npm ci
+        working-directory: server
+      - run: go test ./...

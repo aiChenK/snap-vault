@@ -1,0 +1,24 @@
+{
+  "name": "snap-vault-server",
+  "version": "1.0.0",
+  "description": "SnapVault self-hosted screenshot sync & gallery server",
+  "license": "MIT",
+  "author": "aichenk",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:reload": "pm2 reload ecosystem.config.js",
+    "pm2:logs": "pm2 logs snap-vault",
+    "clean": "node src/clean.js",
+    "test": "node test/api_test.js && node test/clean_test.js && node test/web_test.js && node test/gallery_features_test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.1",
+    "multer": "^2.5.0"
+  }
+}
