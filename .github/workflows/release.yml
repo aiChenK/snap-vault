@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish client binaries
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: client/go.mod
+
+      # tag 推送不会触发 ci.yml，发布前在此跑一遍含端到端的客户端测试
+      # e2e 会拉起 Node 服务端 (server/)，需先安装其依赖
+      - name: Install server deps
+        run: npm ci
+        working-directory: server
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build all platforms
+        run: ./build.sh "$GITHUB_REF_NAME" dist
+
+      - name: Create release and upload artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd dist
+          sha256sum snap-vault-* > checksums.txt
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            snap-vault-* checksums.txt

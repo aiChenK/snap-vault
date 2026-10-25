@@ -1,0 +1,125 @@
+# ==========================================
+# 环境变量与敏感凭据 (Environment & Secrets)
+# ==========================================
+.env
+.env.local
+.env.*.local
+server/.env
+# 保留环境变量示例模板文件
+!.env.example
+!server/.env.example
+
+# 客户端运行配置 (包含本地设备标识、私有 API Key 与本地路径)
+config.json
+*.config.json
+config.json.bak
+**/config.json
+**/config.json.bak
+*.bak
+
+# 密钥与证书
+*.pem
+*.key
+*.cert
+
+# ==========================================
+# 数据存储与持久化目录 (Data & Storage)
+# ==========================================
+# 服务端截图存储 (uploads, thumbs, manifests, trash)
+data/
+server/data/
+
+# 客户端系统回收站降级目录 (本地回收站)
+.snapvault-trash/
+**/.snapvault-trash/
+
+# 服务端自动化测试生成的临时数据目录 (api_test, clean_test, gallery_features_test 等)
+server/test/test_*/
+**/test_data/
+
+# ==========================================
+# Node.js 依赖与日志 (Node.js & Logs)
+# ==========================================
+node_modules/
+server/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+logs/
+
+# ==========================================
+# Go 与客户端编译构建产物 (Build Outputs)
+# ==========================================
+# 编译二进制输出目录
+bin/
+dist/
+client/bin/
+client/dist/
+
+# 本地直接编译出的执行程序 (Windows / Linux / macOS)
+# 注意: 必须以 / 锚定仓库根目录, 裸模式会误匹配 client/cmd/snap-vault/ 源码目录
+/snap-vault
+/snap-vault.exe
+client/cmd/snap-vault/snap-vault
+client/cmd/snap-vault/snap-vault.exe
+client/test/snap-vault-bin
+
+# 通用二进制与动态链接库
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go 测试、覆盖率与性能分析产物
+*.test
+*.out
+*.prof
+
+# Go 本地工作区文件
+go.work
+go.work.sum
+
+# 临时文件与缓存
+*.tmp
+
+# ==========================================
+# 系统与编辑器生成文件 (OS & Editors)
+# ==========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Icon\r\r
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# IDE 与代码编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+.claude/
+.trae/
+
+# ==========================================
+# 本地私有文件 (Local-only，不随公开仓库分发)
+# ==========================================
+# 个人部署脚本与内部设计/审查文档
+update.sh
+.agent_plan/
+.agent_docs/

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapVault - 游戏截图归档画廊</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
+</head>
+<body class="dark-theme">
+  <!-- 顶栏导航 -->
+  <header class="navbar">
+    <div class="brand">
+      <span class="logo">⚡</span>
+      <span class="title">SnapVault</span>
+      <span class="badge">Gallery</span>
+    </div>
+    
+    <div class="filters">
+      <!-- 机器筛选 -->
+      <div class="filter-group">
+        <label for="machineSelect">设备:</label>
+        <select id="machineSelect">
+          <option value="">全部设备</option>
+        </select>
+      </div>
+
+      <!-- 排序方式 -->
+      <div class="filter-group">
+        <label for="sortSelect">排序:</label>
+        <select id="sortSelect">
+          <option value="mtime_desc">时间：最新优先</option>
+          <option value="mtime_asc">时间：最早优先</option>
+          <option value="size_desc">大小：从大到小</option>
+          <option value="size_asc">大小：从小到大</option>
+          <option value="name_asc">名称：A → Z</option>
+          <option value="name_desc">名称：Z → A</option>
+        </select>
+      </div>
+
+      <!-- 日期范围与快捷筛选 -->
+      <div class="filter-group date-filter-container">
+        <label>日期:</label>
+        <div class="quick-dates" id="quickDates">
+          <button type="button" class="date-chip active" data-range="all">全部</button>
+          <button type="button" class="date-chip" data-range="1d">1天</button>
+          <button type="button" class="date-chip" data-range="3d">3天</button>
+          <button type="button" class="date-chip" data-range="7d">7天</button>
+          <button type="button" class="date-chip" data-range="1m">1个月</button>
+        </div>
+        <div class="date-range-inputs">
+          <input type="date" id="startDateFilter" title="开始日期">
+          <span class="date-sep">至</span>
+          <input type="date" id="endDateFilter" title="结束日期">
+        </div>
+      </div>
+
+      <!-- 每页数量 -->
+      <div class="filter-group">
+        <label for="pageSizeSelect">每页:</label>
+        <select id="pageSizeSelect">
+          <option value="24">24 张</option>
+          <option value="48" selected>48 张</option>
+          <option value="96">96 张</option>
+          <option value="120">120 张</option>
+        </select>
+      </div>
+
+      <!-- 刷新按钮 -->
+      <button id="refreshBtn" class="btn btn-icon" title="刷新列表">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      </button>
+
+      <!-- Key 设置按钮 -->
+      <button id="keyConfigBtn" class="btn btn-secondary" title="配置 API 密钥">
+        <span id="keyStatusDot" class="status-dot"></span>
+        API Key
+      </button>
+    </div>
+  </header>
+
+  <!-- 主体容器 -->
+  <main class="container">
+    <!-- 统计与批量管理工具条 -->
+    <div id="statsBar" class="stats-bar">
+      <div class="stats-left">
+        <span id="itemCount" class="stat-count">共 0 张截图</span>
+        <span id="pageInfo" class="badge-page">第 1 / 1 页</span>
+        <span id="selectionSummary" class="selection-summary hidden">
+          已选择 <strong id="selectedCount">0</strong> 项
+        </span>
+      </div>
+      
+      <div class="batch-actions" id="batchActions">
+        <button id="selectAllBtn" class="btn btn-secondary btn-sm" title="全选当前页所有截图">全选本页</button>
+        <button id="clearSelectionBtn" class="btn btn-secondary btn-sm hidden" title="清空全部已选">取消全选</button>
+        <button id="batchDeleteBtn" class="btn btn-danger btn-sm" disabled title="批量移入回收站">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          批量删除 (<span id="batchDeleteCount">0</span>)
+        </button>
+      </div>
+    </div>
+
+    <!-- 图库网格 -->
+    <div id="galleryGrid" class="gallery-grid"></div>
+
+    <!-- 加载中与状态提示 -->
+    <div id="loadingIndicator" class="loading-indicator hidden">
+      <div class="spinner"></div>
+      <span>正在加载截图...</span>
+    </div>
+
+    <!-- 空状态提示 -->
+    <div id="emptyState" class="empty-state hidden">
+      <div class="empty-icon">🖼️</div>
+      <h3>暂无截图</h3>
+      <p>没有找到符合当前筛选条件的截图，请尝试切换筛选或使用客户端上传！</p>
+    </div>
+
+    <!-- 分页导航栏 -->
+    <nav id="paginationBar" class="pagination-bar hidden" aria-label="分页导航"></nav>
+  </main>
+
+  <!-- 全屏灯箱 (Lightbox) -->
+  <div id="lightbox" class="lightbox hidden">
+    <div class="lightbox-overlay"></div>
+    <div class="lightbox-header">
+      <div class="lightbox-meta">
+        <span id="lbTitle" class="lb-title"></span>
+        <span id="lbMachine" class="lb-tag"></span>
+        <span id="lbTime" class="lb-time"></span>
+        <span id="lbSize" class="lb-size"></span>
+      </div>
+      <div class="lightbox-actions">
+        <button id="lbDownloadBtn" class="btn btn-icon" title="下载原图">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        </button>
+        <button id="lbDeleteBtn" class="btn btn-icon btn-danger" title="删除截图">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+        <button id="lbCloseBtn" class="btn btn-icon" title="关闭 (Esc)">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 导航切换按钮 -->
+    <button id="lbPrevBtn" class="lb-nav-btn prev" title="上一张 (←)">
+      <svg viewBox="0 0 24 24" width="32" height="32"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+    <button id="lbNextBtn" class="lb-nav-btn next" title="下一张 (→)">
+      <svg viewBox="0 0 24 24" width="32" height="32"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+    </button>
+
+    <!-- 灯箱图片区 -->
+    <div class="lightbox-stage" id="lightboxStage">
+      <img id="lbImage" class="lightbox-img" alt="截图预览">
+      <div id="lbImageSpinner" class="spinner lb-spinner hidden"></div>
+    </div>
+  </div>
+
+  <!-- API Key 配置模态框 -->
+  <div id="keyModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <h3>配置 API 密钥</h3>
+      <p class="modal-desc">请输入服务端的 X-API-Key，用于加载与管理图库中的图片资源。</p>
+      <input type="password" id="keyInput" placeholder="输入 API 密钥..." class="input-text">
+      <div class="modal-actions">
+        <button id="keyCancelBtn" class="btn btn-secondary">取消</button>
+        <button id="keySaveBtn" class="btn btn-primary">保存并连接</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
