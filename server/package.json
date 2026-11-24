@@ -1,6 +1,6 @@
 {
   "name": "snap-vault-server",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "SnapVault self-hosted screenshot sync & gallery server",
   "license": "MIT",
   "author": "aichenk",

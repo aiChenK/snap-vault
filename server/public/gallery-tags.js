@@ -183,15 +183,13 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, showErro
           value.value = current || '';
           value.focus();
         }));
-        if (current || (!manual && tag.auto?.status === 'low_conf')) {
-          row.append(button('清空', () => save(tag.category, 'manual', null)));
-        }
         if (manual && tag.auto?.status === 'ok') {
-          row.append(button('恢复自动识别', () => save(tag.category, 'auto', null)));
+          row.append(button('恢复自动识别', () => save(tag.category, 'auto')));
         }
         if (tag.auto?.status === 'low_conf' && !manual) {
           row.append(button(`确认候选「${tag.auto.value}」`, () => save(tag.category, 'manual', tag.auto.value)));
         }
+        row.append(button('删除', () => save(tag.category, 'delete'), 'danger'));
         if (tag.auto?.status === 'err') row.append(document.createTextNode(tag.auto.error || '识别失败'));
         return row;
       }));

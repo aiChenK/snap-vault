@@ -12,10 +12,13 @@ router.put('/tags', async (req, res, next) => {
   try {
     const { machine, key, value, mode } = req.body;
     const category = tagText(req.body.category, 64, 'category');
-    if (mode !== 'manual' && mode !== 'auto') throw new ApiError(400, 'Invalid tag mode');
-    const manual = mode === 'manual' && value !== null ? tagText(value, 128, 'value') : null;
+    if (!['manual', 'auto', 'delete'].includes(mode)) throw new ApiError(400, 'Invalid tag mode');
+    const manual = mode === 'manual' ? tagText(value, 128, 'value') : null;
     const tags = await updateTag(sanitizeMachine(machine), sanitizeKey(key), category, tag => {
-      if (mode === 'auto') {
+      if (mode === 'delete') {
+        delete tag.manual;
+        delete tag.auto;
+      } else if (mode === 'auto') {
         if (tag.auto?.status !== 'ok') throw new ApiError(409, '该标签没有可恢复的自动识别结果');
         delete tag.manual;
       } else {
