@@ -134,6 +134,8 @@ pm2 stop snap-vault         # 停止服务 (或 npm run pm2:stop)
 
 入口模块导出 `async function analyze(blob)`。参数为原图的 `Blob`。插件可以通过相对导入加载自己的脚本，并用 `new URL('./资源文件', import.meta.url)` 定位模型。仅 `public/` 目录作为浏览器静态资源提供。插件在画廊同源运行，管理员应只安装受信任的代码。
 
+需要加载模型的插件也可以导出 `prepare(reportProgress)`。画廊会在处理第一张图之前等待准备完成。插件可以调用 `reportProgress('正在加载识别模型…')` 更新弹窗提示。
+
 | 返回值 | 画廊行为 |
 | --- | --- |
 | `{ status: "ok", value: "城镇" }` | 保存识别值，人工选择优先 |

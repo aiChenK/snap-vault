@@ -118,6 +118,7 @@ $RECYCLE.BIN/
 .trae/
 
 # Local-only
+/AGENTS.md
 _docs/
 update.sh
 /graphify-out/

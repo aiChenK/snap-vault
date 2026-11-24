@@ -24,8 +24,7 @@
 
   const tags = createGalleryTags({
     apiFetch, selected: state.selectedMap, reload: () => loadGallery(state.page),
-    filterChanged: () => loadGallery(1),
-    showError: message => toast(message, 'error'),
+    filterChanged: applyGalleryFilters, toast,
   });
 
   // ===== DOM 引用 =====
@@ -271,7 +270,7 @@
 
     el.machineSelect.addEventListener('change', (e) => {
       state.machine = e.target.value;
-      loadGallery(1);
+      applyGalleryFilters();
     });
 
     el.sortSelect.addEventListener('change', (e) => {
@@ -298,13 +297,13 @@
     el.startDateFilter.addEventListener('change', () => {
       state.startDate = el.startDateFilter.value;
       clearActiveChips();
-      loadGallery(1);
+      applyGalleryFilters();
     });
 
     el.endDateFilter.addEventListener('change', () => {
       state.endDate = el.endDateFilter.value;
       clearActiveChips();
-      loadGallery(1);
+      applyGalleryFilters();
     });
 
     el.emptyResetBtn.addEventListener('click', resetFilters);
@@ -367,6 +366,11 @@
       el.endDateFilter.value = state.endDate;
     }
 
+    applyGalleryFilters();
+  }
+
+  function applyGalleryFilters() {
+    clearAllSelections();
     loadGallery(1);
   }
 
@@ -385,8 +389,7 @@
     clearActiveChips();
     const allChip = el.quickDates.querySelector('[data-range="all"]');
     if (allChip) allChip.classList.add('is-active');
-    clearAllSelections();
-    loadGallery(1);
+    applyGalleryFilters();
   }
 
   // ===== Key 模态框 =====
@@ -458,6 +461,9 @@
     if (state.isLoading) return;
     state.isLoading = true;
     tags.setLoading(true);
+    el.filterRail.inert = true;
+    el.galleryGrid.inert = true;
+    el.selectAllBtn.disabled = true;
     el.consoleEl.classList.add('is-busy');
     el.galleryGrid.setAttribute('aria-busy', 'true');
     el.loadingIndicator.classList.remove('hidden');
@@ -495,6 +501,9 @@
     } finally {
       state.isLoading = false;
       tags.setLoading(false);
+      el.filterRail.inert = false;
+      el.galleryGrid.inert = false;
+      el.selectAllBtn.disabled = false;
       el.consoleEl.classList.remove('is-busy');
       el.galleryGrid.setAttribute('aria-busy', 'false');
       el.loadingIndicator.classList.add('hidden');
@@ -658,7 +667,10 @@
   function clearAllSelections() {
     state.selectedKeys.clear();
     state.selectedMap.clear();
-    if (state.items.length) renderCards(state.items);
+    el.galleryGrid.querySelectorAll('.card.is-selected').forEach(card => {
+      card.classList.remove('is-selected');
+      card.querySelector('.card-checkbox').checked = false;
+    });
     updateStatsAndBatchBar();
   }
 

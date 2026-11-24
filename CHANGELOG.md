@@ -2,6 +2,13 @@
 
 本文件记录 SnapVault 的所有重要变更。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## server-v1.0.3（2026-11-24）
+
+- **Improvements（优化）**：
+  - 批量识别显示当前截图和处理进度，完成后自动关闭弹窗并提示结果。更新龙之谷识别插件后，首次识别还会显示 OCR 资源加载阶段。
+- **Bug Fixes（修复）**：
+  - 切换标签、设备或日期筛选时清空已选截图，避免误将筛选前选中的截图移入回收站。同一筛选下仍可跨页多选。
+
 ## server-v1.0.2（2026-11-24）
 
 - **Bug Fixes（修复）**：

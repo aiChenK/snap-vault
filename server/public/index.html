@@ -310,7 +310,9 @@
   <dialog id="pluginDialog" class="tag-dialog modal-card" aria-labelledby="pluginTitle">
     <h3 id="pluginTitle" class="modal-title"></h3>
     <p id="pluginProgress" role="status"></p>
-    <label><input type="checkbox" id="pluginForce"> 全部重新识别</label>
+    <progress id="pluginProgressBar" aria-label="识别进度" hidden></progress>
+    <p id="pluginCurrentFile" hidden></p>
+    <label id="pluginOptions"><input type="checkbox" id="pluginForce"> 全部重新识别</label>
     <div class="modal-actions">
       <button id="pluginStart" class="btn btn-primary">开始</button>
       <button id="pluginClose" class="btn btn-ghost">关闭</button>

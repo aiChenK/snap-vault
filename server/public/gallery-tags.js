@@ -1,6 +1,6 @@
 'use strict';
 
-function createGalleryTags({ apiFetch, selected, reload, filterChanged, showError }) {
+function createGalleryTags({ apiFetch, selected, reload, filterChanged, toast }) {
   const byId = id => document.getElementById(id);
   const clearFiltersButton = byId('clearTagFiltersBtn');
   const storageKey = 'snapvault_tag_filter_categories';
@@ -115,7 +115,7 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, showErro
       byId('tagFilterOptions').replaceChildren(...options);
       byId('tagFilterEmpty').hidden = options.length > 0;
     } catch (err) {
-      showError(err.message);
+      toast(err.message, 'error');
       return;
     } finally {
       trigger.textContent = '标签管理';
@@ -221,6 +221,9 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, showErro
   function openBatch(plugin) {
     const dialog = byId('pluginDialog');
     const progress = byId('pluginProgress');
+    const progressBar = byId('pluginProgressBar');
+    const currentFile = byId('pluginCurrentFile');
+    const options = byId('pluginOptions');
     const force = byId('pluginForce');
     const start = byId('pluginStart');
     const close = byId('pluginClose');
@@ -237,8 +240,8 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, showErro
 
     byId('pluginTitle').textContent = plugin.action;
     force.checked = false;
-    force.disabled = false;
     force.onchange = showPlan;
+    options.hidden = false;
     start.hidden = false;
     close.textContent = '关闭';
     close.onclick = () => {
@@ -257,17 +260,28 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, showErro
     start.onclick = async () => {
       const targets = force.checked ? all : pending;
       running = true;
-      force.disabled = true;
+      options.hidden = true;
       start.hidden = true;
       close.textContent = '停止';
+      close.focus();
+      progress.textContent = '正在加载识别插件…';
+      progressBar.removeAttribute('value');
+      progressBar.hidden = false;
       const counts = { ok: 0, low_conf: 0, no_match: 0, err: 0 };
       let completed = 0;
       try {
-        const { analyze } = await import(plugin.entry + '?v=' + plugin.version);
+        const { analyze, prepare } = await import(plugin.entry + '?v=' + plugin.version);
         if (typeof analyze !== 'function') throw new Error('插件缺少 analyze 导出');
+        if (!stop && typeof prepare === 'function') {
+          await prepare(message => { progress.textContent = message; });
+        }
+        progressBar.max = targets.length;
+        progressBar.value = 0;
         for (const item of targets) {
           if (stop) break;
-          progress.textContent = `${completed + 1} / ${targets.length} · ${item.origName || item.key}`;
+          progress.textContent = `正在识别第 ${completed + 1} 张，共 ${targets.length} 张`;
+          currentFile.textContent = item.origName || item.key;
+          currentFile.hidden = false;
           let result;
           try {
             result = await recognize(analyze, item);
@@ -281,12 +295,21 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, showErro
           item.tags = saved.tags;
           counts[result.status]++;
           completed++;
+          progressBar.value = completed;
         }
-        progress.textContent = `已处理 ${completed} 张。已识别 ${counts.ok}，待确认 ${counts.low_conf}，未匹配 ${counts.no_match}，失败 ${counts.err}。`;
+        const summary = `已处理 ${completed} 张。已识别 ${counts.ok}，待确认 ${counts.low_conf}，未匹配 ${counts.no_match}，失败 ${counts.err}。`;
+        if (completed === targets.length) {
+          dialog.close();
+          toast(summary, counts.err ? 'error' : 'ok');
+        } else {
+          progress.textContent = `已停止。${summary}`;
+        }
       } catch (err) {
         progress.textContent = `已保存 ${completed} 张。识别中断：${err.message}`;
       } finally {
         running = false;
+        progressBar.hidden = true;
+        currentFile.hidden = true;
         close.textContent = '关闭';
         if (completed) await reload();
       }

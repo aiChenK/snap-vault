@@ -1510,6 +1510,22 @@ kbd {
 #tagForm input { display: block; margin-top: var(--s-1); }
 #tagForm input, #tagForm > .btn { min-height: 44px; }
 #tagForm > .btn { justify-self: end; white-space: nowrap; }
+#pluginProgress, #pluginCurrentFile { overflow-wrap: anywhere; }
+#pluginCurrentFile {
+  color: var(--text-muted);
+  font-size: var(--fs-200);
+}
+#pluginProgressBar:not([hidden]) {
+  display: block;
+  width: 100%;
+  height: 8px;
+  accent-color: var(--accent);
+}
+#pluginOptions:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
 #pluginForce { accent-color: var(--accent); }
 @media (max-width: 560px) {
   #pluginActions { order: -1; flex-basis: 100%; }
