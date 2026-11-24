@@ -2,32 +2,87 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SnapVault - 游戏截图归档画廊</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="SnapVault —— 多机游戏截图同步与自托管画廊">
+  <title>SnapVault · 截图档案</title>
+
+  <!-- 自托管字体：避免因 CDN 不可达导致的字形回退，先预载两个主力字重 -->
+  <link rel="preload" href="fonts/chakra-petch-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/ibm-plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28' fill='none' stroke='%23ffb01f'%3E%3Crect x='1.5' y='1.5' width='25' height='25' rx='3' stroke-opacity='.45'/%3E%3Ccircle cx='14' cy='14' r='7.5' stroke-width='1.6'/%3E%3Ccircle cx='14' cy='14' r='2.6' fill='%23ffb01f' stroke='none'/%3E%3Cpath d='M14 4.5v3.4M14 20.1v3.4M4.5 14h3.4M20.1 14h3.4' stroke-width='1.4'/%3E%3C/svg%3E">
 </head>
-<body class="dark-theme">
-  <!-- 顶栏导航 -->
-  <header class="navbar">
-    <div class="brand">
-      <span class="logo">⚡</span>
-      <span class="title">SnapVault</span>
-      <span class="badge">Gallery</span>
+
+<body>
+  <!-- 氛围层：网格 + 琥珀辉光 + 颗粒，全部 pointer-events:none -->
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <!-- ===================== 顶部控制台 ===================== -->
+  <header class="console">
+    <div class="console__bar">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" width="26" height="26">
+            <rect x="1.5" y="1.5" width="25" height="25" rx="3" stroke-opacity=".45"></rect>
+            <circle cx="14" cy="14" r="7.5" stroke-width="1.5"></circle>
+            <circle cx="14" cy="14" r="2.6" fill="currentColor" stroke="none"></circle>
+            <path d="M14 4.5v3.4M14 20.1v3.4M4.5 14h3.4M20.1 14h3.4" stroke-width="1.4"></path>
+            <path d="M7.5 7.5 10 10M20.5 20.5 18 18M20.5 7.5 18 10M7.5 20.5 10 18" stroke-width="1.1" stroke-opacity=".55"></path>
+          </svg>
+        </span>
+        <span class="brand__text">
+          <span class="brand__name">SNAP<em>VAULT</em></span>
+          <span class="brand__sub">截图档案 · 自托管画廊</span>
+        </span>
+      </div>
+
+      <!-- 读数条：等宽数字 + 仪器感标签 -->
+      <dl class="readout" aria-label="图库读数">
+        <div class="readout__cell">
+          <dt>截图</dt>
+          <dd id="roFrames" class="readout__v">0000</dd>
+        </div>
+        <div class="readout__cell">
+          <dt>设备</dt>
+          <dd id="roMachines" class="readout__v">0</dd>
+        </div>
+        <div class="readout__cell">
+          <dt>本页体积</dt>
+          <dd id="roVolume" class="readout__v">0 MB</dd>
+        </div>
+        <div class="readout__cell readout__cell--state">
+          <dt>连接</dt>
+          <dd id="roStatus" class="readout__v readout__v--warn">未接入</dd>
+        </div>
+      </dl>
+
+      <div class="console__actions">
+        <button id="filterToggleBtn" class="chip-btn" type="button" aria-expanded="true" aria-controls="filterRail">
+          <span class="filter-dot" id="filterDot" aria-hidden="true"></span>
+          <span>筛选</span>
+        </button>
+        <button id="refreshBtn" class="icon-btn" type="button" title="重新读取清单 (R)" aria-label="重新读取清单">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 0 0-8 8 8 8 0 0 0 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18a6 6 0 0 1-6-6 6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        </button>
+        <button id="keyConfigBtn" class="chip-btn" type="button">
+          <span id="keyStatusDot" class="status-dot"></span>
+          <span>API 密钥</span>
+        </button>
+      </div>
     </div>
-    
-    <div class="filters">
-      <!-- 机器筛选 -->
-      <div class="filter-group">
-        <label for="machineSelect">设备:</label>
+
+    <!-- 筛选滑轨 -->
+    <div class="console__rail" id="filterRail">
+      <div class="field">
+        <label for="machineSelect">设备</label>
         <select id="machineSelect">
           <option value="">全部设备</option>
         </select>
       </div>
 
-      <!-- 排序方式 -->
-      <div class="filter-group">
-        <label for="sortSelect">排序:</label>
+      <div class="field">
+        <label for="sortSelect">排序</label>
         <select id="sortSelect">
           <option value="mtime_desc">时间：最新优先</option>
           <option value="mtime_asc">时间：最早优先</option>
@@ -38,28 +93,26 @@
         </select>
       </div>
 
-      <!-- 日期范围与快捷筛选 -->
-      <div class="filter-group date-filter-container">
-        <label>日期:</label>
-        <div class="quick-dates" id="quickDates">
-          <button type="button" class="date-chip active" data-range="all">全部</button>
-          <button type="button" class="date-chip" data-range="1d">1天</button>
-          <button type="button" class="date-chip" data-range="3d">3天</button>
-          <button type="button" class="date-chip" data-range="7d">7天</button>
-          <button type="button" class="date-chip" data-range="1m">1个月</button>
-        </div>
-        <div class="date-range-inputs">
-          <input type="date" id="startDateFilter" title="开始日期">
-          <span class="date-sep">至</span>
-          <input type="date" id="endDateFilter" title="结束日期">
+      <div class="field field--wide">
+        <label id="dateRangeLabel">时段</label>
+        <div class="date-range">
+          <div class="quick-dates" id="quickDates" role="group" aria-labelledby="dateRangeLabel">
+            <button type="button" class="date-chip is-active" data-range="all">全部</button>
+            <button type="button" class="date-chip" data-range="1d">今天</button>
+            <button type="button" class="date-chip" data-range="3d">3天</button>
+            <button type="button" class="date-chip" data-range="7d">7天</button>
+            <button type="button" class="date-chip" data-range="1m">30天</button>
+          </div>
+          <div class="date-range-inputs">
+            <input type="date" id="startDateFilter" aria-label="开始日期" title="开始日期">
+            <span class="date-sep" aria-hidden="true">→</span>
+            <input type="date" id="endDateFilter" aria-label="结束日期" title="结束日期">
+          </div>
         </div>
       </div>
 
-      <div id="tagFilters" class="tag-row"></div>
-
-      <!-- 每页数量 -->
-      <div class="filter-group">
-        <label for="pageSizeSelect">每页:</label>
+      <div class="field">
+        <label for="pageSizeSelect">每页</label>
         <select id="pageSizeSelect">
           <option value="24">24 张</option>
           <option value="48" selected>48 张</option>
@@ -67,119 +120,181 @@
           <option value="120">120 张</option>
         </select>
       </div>
-
-      <!-- 刷新按钮 -->
-      <button id="refreshBtn" class="btn btn-icon" title="刷新列表">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-      </button>
-
-      <!-- Key 设置按钮 -->
-      <button id="keyConfigBtn" class="btn btn-secondary" title="配置 API 密钥">
-        <span id="keyStatusDot" class="status-dot"></span>
-        API Key
-      </button>
     </div>
+
+    <!-- 忙碌时的扫描光线 -->
+    <span class="console__scan" aria-hidden="true"></span>
   </header>
 
-  <!-- 主体容器 -->
-  <main class="container">
+  <!-- ===================== 主体 ===================== -->
+  <main class="stage">
+    <h1 class="sr-only">SnapVault 截图档案库</h1>
+
+    <fieldset class="tag-filter-panel" id="tagFilterControls">
+      <legend class="sr-only">标签筛选</legend>
+      <div class="tag-filter-panel__header">
+        <span aria-hidden="true">标签筛选</span>
+        <div class="tag-filter-panel__actions">
+          <button id="clearTagFiltersBtn" class="btn btn-ghost btn-sm" type="button" disabled>清空筛选</button>
+          <button id="tagFilterSettingsBtn" class="btn btn-ghost btn-sm" type="button" aria-haspopup="dialog">标签管理</button>
+        </div>
+      </div>
+      <div id="tagFilters" class="tag-filter-panel__fields"></div>
+    </fieldset>
+
     <!-- 统计与批量管理工具条 -->
-    <div id="statsBar" class="stats-bar">
-      <div class="stats-left">
-        <span id="itemCount" class="stat-count">共 0 张截图</span>
-        <span id="pageInfo" class="badge-page">第 1 / 1 页</span>
+    <section id="statsBar" class="toolbar" aria-label="图库统计与批量操作">
+      <div class="toolbar__meta">
+        <span id="itemCount" class="stat-count">共 0 张</span>
+        <span id="pageInfo" class="badge-page">第 01 / 01 页</span>
         <span id="selectionSummary" class="selection-summary hidden">
-          已选择 <strong id="selectedCount">0</strong> 项
+          已选 <strong id="selectedCount">0</strong> 张
         </span>
       </div>
-      
+
       <div class="batch-actions" id="batchActions">
-        <button id="selectAllBtn" class="btn btn-secondary btn-sm" title="全选当前页所有截图">全选本页</button>
-        <button id="clearSelectionBtn" class="btn btn-secondary btn-sm hidden" title="清空全部已选">取消全选</button>
-        <span id="pluginActions" class="tag-row"></span>
-        <button id="batchDeleteBtn" class="btn btn-danger btn-sm" disabled title="批量移入回收站">
-          <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          批量删除 (<span id="batchDeleteCount">0</span>)
+        <button id="selectAllBtn" class="btn btn-ghost btn-sm" type="button" title="全选当前页">全选本页</button>
+        <button id="clearSelectionBtn" class="btn btn-ghost btn-sm hidden" type="button" title="清空已选">取消全选</button>
+        <span id="pluginActions"></span>
+        <button id="batchDeleteBtn" class="btn btn-danger btn-sm" type="button" disabled title="批量移入回收站">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          <span>移入回收站 <b id="batchDeleteCount">0</b></span>
         </button>
       </div>
-    </div>
+    </section>
 
     <!-- 图库网格 -->
-    <div id="galleryGrid" class="gallery-grid"></div>
+    <div id="galleryGrid" class="gallery-grid" aria-busy="true"></div>
 
-    <!-- 加载中与状态提示 -->
+    <!-- 加载中 -->
     <div id="loadingIndicator" class="loading-indicator hidden">
-      <div class="spinner"></div>
-      <span>正在加载截图...</span>
+      <span class="scan-bar" aria-hidden="true"></span>
+      <span>正在读取清单…</span>
     </div>
 
-    <!-- 空状态提示 -->
+    <!-- 空状态 -->
     <div id="emptyState" class="empty-state hidden">
-      <div class="empty-icon">🖼️</div>
-      <h3>暂无截图</h3>
-      <p>没有找到符合当前筛选条件的截图，请尝试切换筛选或使用客户端上传！</p>
+      <div class="empty-frame" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" width="64" height="64">
+          <path d="M4 4h14M4 4v14M60 4H46M60 4v14M4 60h14M4 60v14M60 60H46M60 60v14" stroke-width="2.5" stroke-linecap="square"></path>
+          <circle cx="32" cy="32" r="13" stroke-width="2" stroke-opacity=".55"></circle>
+          <circle cx="32" cy="32" r="4.5" fill="currentColor" stroke="none"></circle>
+        </svg>
+      </div>
+      <h2 class="empty-title">档案里没有这批截图</h2>
+      <p class="empty-desc">当前筛选条件下没有任何截图。放宽时段、切换设备，或者先用桌面客户端同步一批新素材进来。</p>
+      <button id="emptyResetBtn" class="btn btn-primary" type="button">重置全部筛选</button>
     </div>
 
-    <!-- 分页导航栏 -->
+    <!-- 分页 -->
     <nav id="paginationBar" class="pagination-bar hidden" aria-label="分页导航"></nav>
   </main>
 
-  <!-- 全屏灯箱 (Lightbox) -->
-  <div id="lightbox" class="lightbox hidden">
+  <!-- ===================== 页脚 HUD ===================== -->
+  <footer class="hud">
+    <div class="hud__keys">
+      <span><kbd>←</kbd><kbd>→</kbd> 上一张 / 下一张</span>
+      <span><kbd>滚轮</kbd> 缩放</span>
+      <span><kbd>双击</kbd> 复位</span>
+      <span><kbd>Esc</kbd> 退出</span>
+    </div>
+    <div class="hud__brand">自托管 · 无外部依赖 · 无追踪</div>
+  </footer>
+
+  <!-- ===================== 全屏灯箱 ===================== -->
+  <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="截图预览">
     <div class="lightbox-overlay"></div>
-    <div class="lightbox-header">
+
+    <header class="lightbox-header">
       <div class="lightbox-meta">
+        <span id="lbCounter" class="lb-counter">0000 / 0000</span>
         <span id="lbTitle" class="lb-title"></span>
         <span id="lbMachine" class="lb-tag"></span>
-        <span id="lbTime" class="lb-time"></span>
-        <span id="lbTags"></span>
-        <span id="lbSize" class="lb-size"></span>
+        <span id="lbTime" class="lb-data"></span>
+        <span id="lbSize" class="lb-data"></span>
+        <span id="lbTags" class="lb-tag lb-tag--value hidden"></span>
       </div>
       <div class="lightbox-actions">
-        <button id="editTags" class="btn btn-secondary">标签</button>
-        <button id="lbDownloadBtn" class="btn btn-icon" title="下载原图">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        <button id="editTags" class="btn btn-ghost btn-sm" type="button">标签</button>
+        <button id="lbDownloadBtn" class="icon-btn" type="button" title="下载原图" aria-label="下载原图">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
         </button>
-        <button id="lbDeleteBtn" class="btn btn-icon btn-danger" title="删除截图">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        <button id="lbDeleteBtn" class="icon-btn icon-btn--danger" type="button" title="删除这张" aria-label="删除这张">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
         </button>
-        <button id="lbCloseBtn" class="btn btn-icon" title="关闭 (Esc)">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        <button id="lbCloseBtn" class="icon-btn" type="button" title="关闭 (Esc)" aria-label="关闭预览">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
+    </header>
+
+    <div class="lightbox-body">
+      <button id="lbPrevBtn" class="lb-nav-btn prev" type="button" title="上一张 (←)" aria-label="上一张">
+        <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+      </button>
+
+      <div class="lightbox-stage" id="lightboxStage">
+        <img id="lbImage" class="lightbox-img" alt="截图预览">
+        <div id="lbImageSpinner" class="spinner lb-spinner hidden"></div>
+      </div>
+
+      <button id="lbNextBtn" class="lb-nav-btn next" type="button" title="下一张 (→)" aria-label="下一张">
+        <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="currentColor" d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </button>
     </div>
 
-    <!-- 导航切换按钮 -->
-    <button id="lbPrevBtn" class="lb-nav-btn prev" title="上一张 (←)">
-      <svg viewBox="0 0 24 24" width="32" height="32"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-    </button>
-    <button id="lbNextBtn" class="lb-nav-btn next" title="下一张 (→)">
-      <svg viewBox="0 0 24 24" width="32" height="32"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-    </button>
-
-    <!-- 灯箱图片区 -->
-    <div class="lightbox-stage" id="lightboxStage">
-      <img id="lbImage" class="lightbox-img" alt="截图预览">
-      <div id="lbImageSpinner" class="spinner lb-spinner hidden"></div>
+    <!-- 胶片条：带齿孔的底片轨 -->
+    <div class="lightbox-foot">
+      <div class="filmstrip" id="filmstrip" role="tablist" aria-label="本页截图"></div>
     </div>
   </div>
 
-  <!-- API Key 配置模态框 -->
-  <div id="keyModal" class="modal hidden">
+  <!-- ===================== API Key 模态框 ===================== -->
+  <div id="keyModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="keyModalTitle">
     <div class="modal-backdrop"></div>
     <div class="modal-card">
-      <h3>配置 API 密钥</h3>
-      <p class="modal-desc">请输入服务端的 X-API-Key，用于加载与管理图库中的图片资源。</p>
-      <input type="password" id="keyInput" placeholder="输入 API 密钥..." class="input-text">
+      <p class="modal-eyebrow">鉴权</p>
+      <h2 id="keyModalTitle" class="modal-title">接入档案库</h2>
+      <p class="modal-desc">填入服务端的 <code>X-API-Key</code>。密钥只保存在本机 localStorage，图片请求也不会经过任何第三方。</p>
+      <label class="sr-only" for="keyInput">API 密钥</label>
+      <input type="password" id="keyInput" placeholder="输入 API 密钥…" class="input-text" autocomplete="off" spellcheck="false">
+      <p class="modal-hint">密钥配置在服务端的 <code>.env</code> 里（<code>API_KEY</code>）。</p>
       <div class="modal-actions">
-        <button id="keyCancelBtn" class="btn btn-secondary">取消</button>
-        <button id="keySaveBtn" class="btn btn-primary">保存并连接</button>
+        <button id="keyCancelBtn" class="btn btn-ghost" type="button">取消</button>
+        <button id="keySaveBtn" class="btn btn-primary" type="button">保存并连接</button>
       </div>
     </div>
   </div>
 
-  <dialog id="tagEditor" class="tag-dialog" aria-labelledby="tagEditorTitle">
-    <h3 id="tagEditorTitle">截图标签</h3>
+  <!-- ===================== 通用确认框 ===================== -->
+  <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfDesc">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <p id="cfEyebrow" class="modal-eyebrow">危险操作</p>
+      <h2 id="cfTitle" class="modal-title">确认执行？</h2>
+      <p id="cfDesc" class="modal-desc"></p>
+      <div class="modal-actions">
+        <button id="cfCancelBtn" class="btn btn-ghost" type="button">取消</button>
+        <button id="cfOkBtn" class="btn btn-danger-solid" type="button">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="tagFilterDialog" class="tag-dialog modal-card" aria-labelledby="tagFilterTitle">
+    <h2 id="tagFilterTitle" class="modal-title">标签管理</h2>
+    <p class="modal-desc">勾选要显示在筛选栏的标签类别。设置保存在当前浏览器。</p>
+    <form id="tagFilterForm" method="dialog">
+      <div id="tagFilterOptions" class="tag-filter-options"></div>
+      <p id="tagFilterEmpty" class="modal-hint" hidden>图库中还没有可筛选的标签。</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="submit" value="cancel">取消</button>
+        <button id="tagFilterSave" class="btn btn-primary" type="submit" value="save">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="tagEditor" class="tag-dialog modal-card" aria-labelledby="tagEditorTitle">
+    <h3 id="tagEditorTitle" class="modal-title">截图标签</h3>
     <div id="tagEntries"></div>
     <form id="tagForm">
       <label>类别<input class="input-text" id="tagCategory" list="tagCategories" maxlength="64" required></label>
@@ -187,18 +302,23 @@
       <label>值<input class="input-text" id="tagValue" maxlength="128" required></label>
       <button class="btn btn-primary">保存标签</button>
     </form>
-    <form method="dialog"><button class="btn btn-secondary">完成</button></form>
+    <form class="modal-actions" method="dialog">
+      <button class="btn btn-ghost">完成</button>
+    </form>
   </dialog>
 
-  <dialog id="pluginDialog" class="tag-dialog" aria-labelledby="pluginTitle">
-    <h3 id="pluginTitle"></h3>
+  <dialog id="pluginDialog" class="tag-dialog modal-card" aria-labelledby="pluginTitle">
+    <h3 id="pluginTitle" class="modal-title"></h3>
     <p id="pluginProgress" role="status"></p>
     <label><input type="checkbox" id="pluginForce"> 全部重新识别</label>
-    <div class="tag-row">
+    <div class="modal-actions">
       <button id="pluginStart" class="btn btn-primary">开始</button>
-      <button id="pluginClose" class="btn btn-secondary">关闭</button>
+      <button id="pluginClose" class="btn btn-ghost">关闭</button>
     </div>
   </dialog>
+
+  <!-- Toast 提示栈 -->
+  <div id="toastHost" class="toast-host" role="status" aria-live="polite"></div>
 
   <script src="gallery-tags.js"></script>
   <script src="app.js"></script>

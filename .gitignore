@@ -117,10 +117,7 @@ $RECYCLE.BIN/
 .claude/
 .trae/
 
-# ==========================================
-# 本地私有文件 (Local-only，不随公开仓库分发)
-# ==========================================
-# 个人部署脚本与内部设计/审查文档
+# Local-only
+_docs/
 update.sh
-.agent_plan/
-.agent_docs/
+/graphify-out/

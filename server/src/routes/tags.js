@@ -15,8 +15,12 @@ router.put('/tags', async (req, res, next) => {
     if (mode !== 'manual' && mode !== 'auto') throw new ApiError(400, 'Invalid tag mode');
     const manual = mode === 'manual' && value !== null ? tagText(value, 128, 'value') : null;
     const tags = await updateTag(sanitizeMachine(machine), sanitizeKey(key), category, tag => {
-      if (mode === 'auto') delete tag.manual;
-      else tag.manual = manual;
+      if (mode === 'auto') {
+        if (tag.auto?.status !== 'ok') throw new ApiError(409, '该标签没有可恢复的自动识别结果');
+        delete tag.manual;
+      } else {
+        tag.manual = manual;
+      }
     });
     res.json({ tags: galleryTags(tags) });
   } catch (err) {
