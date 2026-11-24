@@ -21,6 +21,11 @@
     zoomLevel: 1,
   };
 
+  const tags = createGalleryTags({
+    apiFetch, selected: state.selectedMap, reload: () => loadGallery(state.page),
+    filterChanged: () => loadGallery(1),
+  });
+
   // DOM 元素引用
   const el = {
     machineSelect: document.getElementById('machineSelect'),
@@ -266,6 +271,7 @@
 
   // 加载机器列表
   async function loadMachines() {
+    tags.loadPlugins().catch(err => console.warn('加载插件列表失败:', err.message));
     try {
       const data = await apiFetch('/api/machines');
       if (data.machines) {
@@ -296,11 +302,17 @@
       if (state.sort) params.append('sort', state.sort);
       if (state.startDate) params.append('startDate', state.startDate);
       if (state.endDate) params.append('endDate', state.endDate);
+      tags.appendFilters(params);
       params.append('page', String(page));
       params.append('limit', String(state.limit));
 
       const data = await apiFetch(`/api/list?${params.toString()}`);
       state.items = data.items || [];
+      for (const item of state.items) {
+        const id = `${item.machine}:${item.key}`;
+        if (state.selectedKeys.has(id)) state.selectedMap.set(id, item);
+      }
+      tags.renderFilters(data.tagFacets);
       state.total = data.total || 0;
       state.page = data.page || page;
       state.totalPages = data.totalPages || 1;
@@ -368,17 +380,21 @@
         </div>
       `;
 
+      const summary = tags.summary(item);
+      if (summary) {
+        const label = document.createElement('div');
+        label.className = 'card-tags';
+        label.textContent = summary;
+        card.querySelector('.card-info').appendChild(label);
+      }
+
       // 绑定多选复选框变化事件
       const chk = card.querySelector('.card-checkbox');
       chk.addEventListener('change', (e) => {
         e.stopPropagation();
         if (chk.checked) {
           state.selectedKeys.add(itemKeyId);
-          state.selectedMap.set(itemKeyId, {
-            machine: item.machine,
-            key: item.key,
-            origName: item.origName || item.key,
-          });
+          state.selectedMap.set(itemKeyId, item);
           card.classList.add('selected');
         } else {
           state.selectedKeys.delete(itemKeyId);
@@ -412,6 +428,7 @@
     el.pageInfo.textContent = `第 ${state.page} / ${state.totalPages} 页`;
 
     const selectedCount = state.selectedKeys.size;
+    tags.updateActions();
     el.selectedCount.textContent = String(selectedCount);
     el.batchDeleteCount.textContent = String(selectedCount);
 
@@ -455,11 +472,7 @@
       state.items.forEach((it) => {
         const id = `${it.machine}:${it.key}`;
         state.selectedKeys.add(id);
-        state.selectedMap.set(id, {
-          machine: it.machine,
-          key: it.key,
-          origName: it.origName || it.key,
-        });
+        state.selectedMap.set(id, it);
       });
     }
 
@@ -514,7 +527,7 @@
     }
 
     try {
-      const itemsToDelete = Array.from(state.selectedMap.values());
+      const itemsToDelete = Array.from(state.selectedMap.values(), ({ machine, key }) => ({ machine, key }));
       const res = await apiFetch('/api/files/batch-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -647,9 +660,19 @@
     el.lbPrevBtn.addEventListener('click', prevImage);
     el.lbNextBtn.addEventListener('click', nextImage);
 
+    document.getElementById('editTags').onclick = () => {
+      const item = state.items[state.activeLightboxIndex];
+      tags.edit(item, async () => {
+        await loadGallery(state.page);
+        const index = state.items.findIndex(it => it.machine === item.machine && it.key === item.key);
+        if (index < 0) closeLightbox();
+        else openLightbox(index);
+      });
+    };
+
     // 键盘快捷键
     window.addEventListener('keydown', (e) => {
-      if (el.lightbox.classList.contains('hidden')) return;
+      if (el.lightbox.classList.contains('hidden') || document.querySelector('dialog[open]')) return;
       if (e.key === 'Escape') closeLightbox();
       if (e.key === 'ArrowLeft') prevImage();
       if (e.key === 'ArrowRight') nextImage();
@@ -748,6 +771,7 @@
 
     el.lbTitle.textContent = item.origName || item.key;
     el.lbMachine.textContent = item.machine;
+    document.getElementById('lbTags').textContent = tags.summary(item);
     el.lbTime.textContent = formatTime(item.mtime || item.origMtime);
     el.lbSize.textContent = formatSize(item.size || item.origSize);
 

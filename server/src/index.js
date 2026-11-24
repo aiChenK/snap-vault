@@ -5,6 +5,8 @@ const config = require('./config');
 const { ensureDir } = require('./files');
 const authMiddleware = require('./auth');
 const apiRoutes = require('./routes/api');
+const { mountPlugins } = require('./plugins');
+const tagRoutes = require('./routes/tags');
 const webRoutes = require('./routes/web');
 
 async function startServer() {
@@ -42,6 +44,7 @@ async function startServer() {
   // 静态 Web 画廊资源 (无需鉴权即可加载静态页面，API 请求由页面端携带 Key)
   const publicDir = path.join(__dirname, '../public');
   app.use(express.static(publicDir));
+  app.locals.plugins = await mountPlugins(app);
 
   // 图片分发与下载路由 (支持 Header 或 Query key 鉴权)
   app.use('/', authMiddleware, webRoutes);
@@ -56,7 +59,7 @@ async function startServer() {
   });
 
   // REST API 路由 (严格鉴权)
-  app.use('/api', apiLimiter, authMiddleware, apiRoutes);
+  app.use('/api', apiLimiter, authMiddleware, apiRoutes, tagRoutes);
 
   // 统一错误处理: 校验类错误应抛出携带 status 的 ApiError; 5xx 不向客户端泄露内部错误详情
   app.use((err, req, res, next) => {

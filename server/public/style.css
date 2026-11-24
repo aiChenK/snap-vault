@@ -772,3 +772,33 @@ select:focus, input[type="date"]:focus, .input-text:focus {
   justify-content: flex-end;
   gap: 10px;
 }
+
+.tag-row, #tagForm, .tag-entry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tag-row:empty { display: none; }
+.card-tags, #lbTags { color: var(--text-muted); font-size: .8rem; overflow-wrap: anywhere; }
+.card-tags { margin-top: 6px; }
+.tag-dialog {
+  margin: auto;
+  width: min(92vw, 32rem);
+  max-height: 85vh;
+  overflow: auto;
+  padding: 20px;
+  color: var(--text-main);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+}
+.tag-dialog::backdrop { background: rgba(0, 0, 0, .7); }
+.tag-dialog > * + *, .tag-entry + .tag-entry { margin-top: 14px; }
+.tag-dialog label { display: inline-block; }
+#tagForm label { flex: 1; min-width: 8rem; }
+#tagForm input { display: block; width: 100%; margin-top: 4px; padding: 6px; }
+.tag-entry strong { width: 100%; overflow-wrap: anywhere; }
+.lightbox-meta, .batch-actions { flex-wrap: wrap; }
+
+.tag-dialog [hidden] { display: none; }

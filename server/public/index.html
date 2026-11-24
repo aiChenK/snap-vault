@@ -55,6 +55,8 @@
         </div>
       </div>
 
+      <div id="tagFilters" class="tag-row"></div>
+
       <!-- 每页数量 -->
       <div class="filter-group">
         <label for="pageSizeSelect">每页:</label>
@@ -94,6 +96,7 @@
       <div class="batch-actions" id="batchActions">
         <button id="selectAllBtn" class="btn btn-secondary btn-sm" title="全选当前页所有截图">全选本页</button>
         <button id="clearSelectionBtn" class="btn btn-secondary btn-sm hidden" title="清空全部已选">取消全选</button>
+        <span id="pluginActions" class="tag-row"></span>
         <button id="batchDeleteBtn" class="btn btn-danger btn-sm" disabled title="批量移入回收站">
           <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
           批量删除 (<span id="batchDeleteCount">0</span>)
@@ -129,9 +132,11 @@
         <span id="lbTitle" class="lb-title"></span>
         <span id="lbMachine" class="lb-tag"></span>
         <span id="lbTime" class="lb-time"></span>
+        <span id="lbTags"></span>
         <span id="lbSize" class="lb-size"></span>
       </div>
       <div class="lightbox-actions">
+        <button id="editTags" class="btn btn-secondary">标签</button>
         <button id="lbDownloadBtn" class="btn btn-icon" title="下载原图">
           <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
         </button>
@@ -173,6 +178,29 @@
     </div>
   </div>
 
+  <dialog id="tagEditor" class="tag-dialog" aria-labelledby="tagEditorTitle">
+    <h3 id="tagEditorTitle">截图标签</h3>
+    <div id="tagEntries"></div>
+    <form id="tagForm">
+      <label>类别<input class="input-text" id="tagCategory" list="tagCategories" maxlength="64" required></label>
+      <datalist id="tagCategories"></datalist>
+      <label>值<input class="input-text" id="tagValue" maxlength="128" required></label>
+      <button class="btn btn-primary">保存标签</button>
+    </form>
+    <form method="dialog"><button class="btn btn-secondary">完成</button></form>
+  </dialog>
+
+  <dialog id="pluginDialog" class="tag-dialog" aria-labelledby="pluginTitle">
+    <h3 id="pluginTitle"></h3>
+    <p id="pluginProgress" role="status"></p>
+    <label><input type="checkbox" id="pluginForce"> 全部重新识别</label>
+    <div class="tag-row">
+      <button id="pluginStart" class="btn btn-primary">开始</button>
+      <button id="pluginClose" class="btn btn-secondary">关闭</button>
+    </div>
+  </dialog>
+
+  <script src="gallery-tags.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

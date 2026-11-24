@@ -1,3 +1,5 @@
+const { galleryTags } = require('./tags');
+const { ApiError } = require('./errors');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
@@ -127,12 +129,32 @@ async function addOrUpdateItem(machine, item) {
   const clean = sanitizeMachine(machine);
   return withMachineLock(clean, async () => {
     const manifest = await readManifestRaw(clean);
+    const prev = manifest.items[item.key];
+    if (prev?.tags && prev.size === item.size && prev.mtime === item.mtime) item.tags = prev.tags;
     manifest.items[item.key] = item;
     recalculateMeta(manifest);
 
     const filePath = getManifestPath(clean);
     await atomicWriteFile(filePath, JSON.stringify(manifest, null, 2));
     return manifest;
+  });
+}
+
+async function updateTag(machine, key, category, change) {
+  return withMachineLock(machine, async () => {
+    const manifest = await readManifestRaw(machine);
+    const item = manifest.items[key];
+    if (!item || item.deletedAt) throw new ApiError(404, '截图已删除或不存在');
+    const tags = item.tags || [];
+    let tag = tags.find(entry => entry.category === category);
+    if (!tag) {
+      tag = { category };
+      tags.push(tag);
+    }
+    change(tag);
+    item.tags = tags.filter(entry => entry.auto || Object.hasOwn(entry, 'manual'));
+    await atomicWriteFile(getManifestPath(machine), JSON.stringify(manifest, null, 2));
+    return item.tags;
   });
 }
 
@@ -225,9 +247,10 @@ async function listMachines() {
 /**
  * 查询截图列表，支持多机器聚合、日期范围筛选、多维度排序、页码分页与游标分页
  */
-async function queryItems({ machine, date, startDate, endDate, cursor, page, limit = 50, sort = 'mtime_desc' }) {
+async function queryItems({ machine, date, startDate, endDate, cursor, page, limit = 50, sort = 'mtime_desc', filters = [] }) {
   const machines = machine ? [sanitizeMachine(machine)] : await listMachines();
-  let allItems = [];
+  const allItems = [];
+  const facets = new Map();
 
   // 格式化日期参数为 YYYYMMDD 数字字符串方便比对
   const toDigits = (d) => (d ? String(d).replace(/-/g, '') : null);
@@ -257,8 +280,18 @@ async function queryItems({ machine, date, startDate, endDate, cursor, page, lim
               continue;
             }
           }
+          const values = new Map();
+          const tags = galleryTags(item.tags || []);
+          for (const { category, value } of tags) {
+            if (!value) continue;
+            values.set(category, value);
+            if (!facets.has(category)) facets.set(category, new Set());
+            facets.get(category).add(value);
+          }
+          if (!filters.every(filter => values.get(filter.category) === filter.value)) continue;
           allItems.push({
             ...item,
+            tags,
             machine: m,
           });
         }
@@ -267,6 +300,10 @@ async function queryItems({ machine, date, startDate, endDate, cursor, page, lim
       // 忽略损坏的清单
     }
   }
+
+  const tagFacets = Array.from(facets, ([category, values]) => ({
+    category, values: [...values].sort((a, b) => a.localeCompare(b)),
+  })).sort((a, b) => a.category.localeCompare(b.category));
 
   // 多维度排序支持
   switch (sort) {
@@ -302,6 +339,7 @@ async function queryItems({ machine, date, startDate, endDate, cursor, page, lim
 
     return {
       items: pageItems,
+      tagFacets,
       total,
       page: currentPage,
       totalPages,
@@ -328,6 +366,7 @@ async function queryItems({ machine, date, startDate, endDate, cursor, page, lim
 
   return {
     items: pageItems,
+    tagFacets,
     total: allItems.length,
     nextCursor,
     hasMore: Boolean(nextCursor),
@@ -336,6 +375,7 @@ async function queryItems({ machine, date, startDate, endDate, cursor, page, lim
 
 module.exports = {
   withMachineLock,
+  updateTag,
   getMeta,
   getManifest,
   addOrUpdateItem,

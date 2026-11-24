@@ -28,6 +28,7 @@ config.json.bak
 # 服务端截图存储 (uploads, thumbs, manifests, trash)
 data/
 server/data/
+/server/plugins/
 
 # 客户端系统回收站降级目录 (本地回收站)
 .snapvault-trash/

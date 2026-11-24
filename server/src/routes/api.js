@@ -1,3 +1,4 @@
+const { readFilters } = require('../tags');
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -40,6 +41,8 @@ router.get('/manifest', async (req, res, next) => {
   try {
     const machine = sanitizeMachine(req.query.machine);
     const data = await manifestManager.getManifest(machine);
+    // 标签只用于画廊，桌面端对齐文件时无需传输。
+    for (const item of Object.values(data.items)) delete item.tags;
     res.json({
       success: true,
       ...data,
@@ -345,6 +348,7 @@ router.get('/list', async (req, res, next) => {
       page,
       cursor,
       limit: parsedLimit,
+      filters: readFilters(req.query.tags),
     });
 
     res.json({
