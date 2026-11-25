@@ -66,31 +66,123 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, toast })
   }
 
   function renderFilters() {
-    const host = byId('tagFilters');
-    host.replaceChildren();
-    for (const category of filterCategories) {
-      const values = facets.get(category) || [];
-      const field = document.createElement('div');
-      field.className = 'field field--tag';
-      const label = document.createElement('label');
-      label.htmlFor = 'tag-filter-' + host.childElementCount;
-      label.textContent = category;
-      const select = document.createElement('select');
-      const current = filters.get(category) || '';
-      select.id = label.htmlFor;
-      select.disabled = values.length === 0 && !current;
-      select.add(new Option(select.disabled ? '无可用值' : '全部', ''));
-      for (const value of new Set([...values, current])) {
-        if (value) select.add(new Option(value, value));
-      }
-      select.value = current;
-      select.onchange = () => {
-        if (select.value) filters.set(category, select.value);
+    byId('tagFilters').replaceChildren(...Array.from(filterCategories, createFilterField));
+  }
+
+  function createFilterField(category, index) {
+    const field = byId('tagFilterField').content.firstElementChild.cloneNode(true);
+    const label = field.querySelector('label');
+    const input = field.querySelector('input');
+    const clear = field.querySelector('.tag-picker__clear');
+    const menu = field.querySelector('.tag-picker__menu');
+    const list = menu.querySelector('[role="listbox"]');
+    const empty = menu.querySelector('[role="status"]');
+    const values = new Set(['', ...(facets.get(category) || []), filters.get(category) || '']);
+    let active;
+
+    input.id = 'tag-filter-' + index;
+    label.htmlFor = input.id;
+    label.textContent = category;
+    list.id = input.id + '-list';
+    list.setAttribute('aria-label', category);
+    input.setAttribute('aria-controls', list.id);
+    input.disabled = values.size === 1;
+    clear.title = `清空「${category}」筛选`;
+    clear.setAttribute('aria-label', clear.title);
+
+    const options = Array.from(values, (value, i) => {
+      const option = document.createElement('div');
+      option.id = list.id + '-' + i;
+      option.setAttribute('role', 'option');
+      option.dataset.value = value;
+      option.textContent = value || '全部';
+      option.onclick = () => {
+        const changed = value !== (filters.get(category) || '');
+        if (value) filters.set(category, value);
         else filters.delete(category);
-        filterChanged();
+        close();
+        if (changed) filterChanged();
+        else input.select();
       };
-      field.append(label, select);
-      host.append(field);
+      return option;
+    });
+
+    close();
+    input.onfocus = input.onclick = open;
+    input.oninput = showMatches;
+    field.addEventListener('focusout', event => {
+      if (!field.contains(event.relatedTarget)) close();
+    });
+    clear.onclick = () => {
+      if (filters.delete(category)) {
+        close();
+        filterChanged();
+      } else {
+        input.focus();
+        input.value = '';
+        showMatches();
+      }
+    };
+    // 点选时让焦点留在输入框，避免 blur 在 click 之前关闭列表。
+    clear.onmousedown = menu.onmousedown = event => event.preventDefault();
+    input.onkeydown = event => {
+      if (event.isComposing || event.keyCode === 229) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (menu.hidden) {
+          open();
+        } else if (active) {
+          const next = event.key === 'ArrowDown' ? active.nextElementSibling : active.previousElementSibling;
+          if (next) highlight(next);
+        }
+      } else if (!menu.hidden && event.key === 'Enter') {
+        event.preventDefault();
+        active?.click();
+      } else if (!menu.hidden && event.key === 'Escape') {
+        close();
+        input.select();
+      }
+    };
+    return field;
+
+    function open() {
+      if (!menu.hidden) return;
+      input.value = '';
+      showMatches();
+    }
+
+    function showMatches() {
+      const query = input.value.trim().toLowerCase();
+      const matches = options.filter(option => option.textContent.toLowerCase().includes(query));
+      list.replaceChildren(...matches);
+      empty.hidden = matches.length > 0;
+      menu.hidden = false;
+      clear.hidden = !input.value && !filters.has(category);
+      input.placeholder = '搜索标签';
+      input.setAttribute('aria-expanded', 'true');
+      const currentOption = !query && matches.find(option => option.dataset.value === filters.get(category));
+      highlight(currentOption || matches[0]);
+    }
+
+    function highlight(option) {
+      active?.setAttribute('aria-selected', 'false');
+      active = option;
+      if (active) {
+        active.setAttribute('aria-selected', 'true');
+        input.setAttribute('aria-activedescendant', active.id);
+        active.scrollIntoView({ block: 'nearest' });
+      } else {
+        input.removeAttribute('aria-activedescendant');
+      }
+    }
+
+    function close() {
+      menu.hidden = true;
+      input.value = filters.get(category) || '';
+      clear.hidden = !input.value;
+      input.placeholder = input.disabled ? '无可用值' : '全部';
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
     }
   }
 

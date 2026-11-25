@@ -142,6 +142,21 @@
       <div id="tagFilters" class="tag-filter-panel__fields"></div>
     </fieldset>
 
+    <template id="tagFilterField">
+      <div class="field field--tag">
+        <label></label>
+        <div class="tag-picker">
+          <input class="input-text" type="text" role="combobox" aria-autocomplete="list"
+                 aria-expanded="false" autocomplete="off" spellcheck="false">
+          <button class="tag-picker__clear" type="button" hidden>×</button>
+          <div class="tag-picker__menu" hidden>
+            <div role="listbox"></div>
+            <p role="status" hidden>无匹配标签</p>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <!-- 统计与批量管理工具条 -->
     <section id="statsBar" class="toolbar" aria-label="图库统计与批量操作">
       <div class="toolbar__meta">

@@ -2,6 +2,12 @@
 
 本文件记录 SnapVault 的所有重要变更。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## server-v1.0.4（2026-11-25）
+
+- **Features（新特性）**
+  - 画廊的标签筛选下拉框支持输入部分标签名查找候选项，英文匹配忽略大小写。可点击选项，或用方向键选择后按 Enter 应用。
+  - 点击下拉框右侧的「×」可清空该类别的搜索词和已选标签，保留其他类别的筛选。
+
 ## server-v1.0.3（2026-11-24）
 
 - **Improvements（优化）**：
