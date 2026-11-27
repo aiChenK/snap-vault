@@ -25,10 +25,13 @@ function readFilters(raw) {
     throw new ApiError(400, 'Invalid tags filter');
   }
   if (!Array.isArray(filters)) throw new ApiError(400, 'Expected an array of tag filters');
-  return filters.map(filter => ({
-    category: tagText(filter?.category, 64, 'category'),
-    value: tagText(filter?.value, 128, 'value'),
-  }));
+  return filters.map(filter => {
+    const { match = 'exact' } = filter ?? {};
+    if (match !== 'exact' && match !== 'contains') throw new ApiError(400, 'Invalid tag match mode');
+    const category = tagText(filter?.category, 64, 'category');
+    const value = tagText(filter?.value, 128, 'value');
+    return { category, value: match === 'contains' ? value.toLowerCase() : value, match };
+  });
 }
 
 function readReport(body, plugins) {

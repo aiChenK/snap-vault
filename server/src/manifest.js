@@ -288,7 +288,10 @@ async function queryItems({ machine, date, startDate, endDate, cursor, page, lim
             if (!facets.has(category)) facets.set(category, new Set());
             facets.get(category).add(value);
           }
-          if (!filters.every(filter => values.get(filter.category) === filter.value)) continue;
+          if (!filters.every(({ category, value, match }) => {
+            const actual = values.get(category);
+            return match === 'contains' ? actual?.toLowerCase().includes(value) : actual === value;
+          })) continue;
           allItems.push({
             ...item,
             tags,

@@ -45,7 +45,7 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, toast })
 
   function appendFilters(params) {
     if (filters.size) {
-      params.set('tags', JSON.stringify(Array.from(filters, ([category, value]) => ({ category, value }))));
+      params.set('tags', JSON.stringify(Array.from(filters, ([category, filter]) => ({ category, ...filter }))));
     }
   }
 
@@ -77,7 +77,9 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, toast })
     const menu = field.querySelector('.tag-picker__menu');
     const list = menu.querySelector('[role="listbox"]');
     const empty = menu.querySelector('[role="status"]');
-    const values = new Set(['', ...(facets.get(category) || []), filters.get(category) || '']);
+    const current = filters.get(category);
+    const values = new Set(['', ...(facets.get(category) || [])]);
+    if (current && current.match !== 'contains') values.add(current.value);
     let active;
 
     input.id = 'tag-filter-' + index;
@@ -86,26 +88,11 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, toast })
     list.id = input.id + '-list';
     list.setAttribute('aria-label', category);
     input.setAttribute('aria-controls', list.id);
-    input.disabled = values.size === 1;
+    input.disabled = values.size === 1 && !current;
     clear.title = `清空「${category}」筛选`;
     clear.setAttribute('aria-label', clear.title);
 
-    const options = Array.from(values, (value, i) => {
-      const option = document.createElement('div');
-      option.id = list.id + '-' + i;
-      option.setAttribute('role', 'option');
-      option.dataset.value = value;
-      option.textContent = value || '全部';
-      option.onclick = () => {
-        const changed = value !== (filters.get(category) || '');
-        if (value) filters.set(category, value);
-        else filters.delete(category);
-        close();
-        if (changed) filterChanged();
-        else input.select();
-      };
-      return option;
-    });
+    const options = Array.from(values, (value, i) => createOption(value, i));
 
     close();
     input.onfocus = input.onclick = open;
@@ -145,6 +132,24 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, toast })
     };
     return field;
 
+    function createOption(value, id, match) {
+      const option = document.createElement('div');
+      option.id = list.id + '-' + id;
+      option.setAttribute('role', 'option');
+      option.dataset.value = value;
+      option.textContent = match === 'contains' ? `搜索包含「${value}」的截图` : value || '全部';
+      option.onclick = () => {
+        const previous = filters.get(category);
+        const changed = value !== (previous?.value || '') || match !== previous?.match;
+        if (value) filters.set(category, { value, match });
+        else filters.delete(category);
+        close();
+        if (changed) filterChanged();
+        else input.select();
+      };
+      return option;
+    }
+
     function open() {
       if (!menu.hidden) return;
       input.value = '';
@@ -152,15 +157,19 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, toast })
     }
 
     function showMatches() {
-      const query = input.value.trim().toLowerCase();
-      const matches = options.filter(option => option.textContent.toLowerCase().includes(query));
+      const keyword = input.value.trim();
+      const query = keyword.toLowerCase();
+      const matches = options.filter(option => option.dataset.value.toLowerCase().includes(query));
+      if (query && matches.length) matches.unshift(createOption(keyword, 'contains', 'contains'));
       list.replaceChildren(...matches);
       empty.hidden = matches.length > 0;
       menu.hidden = false;
       clear.hidden = !input.value && !filters.has(category);
       input.placeholder = '搜索标签';
       input.setAttribute('aria-expanded', 'true');
-      const currentOption = !query && matches.find(option => option.dataset.value === filters.get(category));
+      const applied = filters.get(category);
+      const currentOption = !query && applied?.match !== 'contains' &&
+        matches.find(option => option.dataset.value === applied?.value);
       highlight(currentOption || matches[0]);
     }
 
@@ -178,7 +187,8 @@ function createGalleryTags({ apiFetch, selected, reload, filterChanged, toast })
 
     function close() {
       menu.hidden = true;
-      input.value = filters.get(category) || '';
+      const applied = filters.get(category);
+      input.value = applied?.match === 'contains' ? `包含「${applied.value}」` : applied?.value || '';
       clear.hidden = !input.value;
       input.placeholder = input.disabled ? '无可用值' : '全部';
       input.setAttribute('aria-expanded', 'false');
